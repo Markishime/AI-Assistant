@@ -1,0 +1,41 @@
+{
+  "soil": {
+    "pH": {
+      "optimal": [5.5, 6.5],
+      "unit": "pH",
+      "interpretation": "The pH is slightly acidic, ideal for oil palm nutrient uptake."
+    },
+    "nitrogen": {
+      "optimal": [0.2, 0.3],
+      "unit": "%",
+      "interpretation": "Nitrogen levels indicate soil fertility and nutrient availability."
+    },
+    "phosphorus": {
+      "optimal": [15, 30],
+      "unit": "ppm",
+      "interpretation": "Phosphorus is critical for root development and energy transfer."
+    },
+    "potassium": {
+      "optimal": [100, 200],
+      "unit": "ppm",
+      "interpretation": "Potassium supports water regulation and disease resistance."
+    }
+  },
+  "leaf": {
+    "nitrogen": {
+      "optimal": [2.5, 3.0],
+      "unit": "%",
+      "interpretation": "Leaf nitrogen reflects protein synthesis capacity."
+    },
+    "phosphorus": {
+      "optimal": [0.15, 0.2],
+      "unit": "%",
+      "interpretation": "Leaf phosphorus indicates metabolic efficiency."
+    },
+    "potassium": {
+      "optimal": [1.0, 1.5],
+      "unit": "%",
+      "interpretation": "Leaf potassium affects photosynthesis and water use."
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "oil-palm-ai-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@genkit-ai/core": "^1.14.0",
+    "@genkit-ai/googleai": "^1.14.0",
+    "@google/generative-ai": "^0.24.1",
+    "@heroui/react": "^2.7.11",
+    "@langchain/community": "^0.3.48",
+    "@langchain/google-genai": "^0.2.14",
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/exceljs": "^0.5.3",
+    "exceljs": "^4.4.0",
+    "faiss-node": "^0.5.1",
+    "firebase": "^11.10.0",
+    "firebase-admin": "^12.0.0",
+    "framer-motion": "^12.23.0",
+    "langchain": "^0.3.29",
+    "lucide-react": "^0.525.0",
+    "next": "^15.3.5",
+    "pdf-parse": "^1.1.1",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-firebase-hooks": "^5.1.1",
+    "react-markdown": "^10.0.0",
+    "remark-gfm": "^4.0.0",
+    "tesseract.js": "^5.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8",
+    "eslint-config-next": "15.0.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
+  }
+}
