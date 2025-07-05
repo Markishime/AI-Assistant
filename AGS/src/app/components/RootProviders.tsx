@@ -3,9 +3,9 @@
 import dynamic from 'next/dynamic';
 import { ReactNode } from 'react';
 
-// Dynamically import the ClientWrapper to prevent SSR issues
-const ClientWrapper = dynamic(
-  () => import('./ClientWrapper').then((mod) => ({ default: mod.ClientWrapper })),
+// Dynamically import the Providers to prevent SSR issues
+const Providers = dynamic(
+  () => import('./Providers').then((mod) => ({ default: mod.Providers })),
   {
     ssr: false,
     loading: () => (
@@ -17,5 +17,5 @@ const ClientWrapper = dynamic(
 );
 
 export function RootProviders({ children }: { children: ReactNode }) {
-  return <ClientWrapper>{children}</ClientWrapper>;
+  return <Providers>{children}</Providers>;
 }

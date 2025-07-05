@@ -4,13 +4,13 @@ import { getFirestore  } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB8ji2rBzaRS0-2oOgpwOvAlTjUaYbE1IU",
-  authDomain: "agriai-bfb9e.firebaseapp.com",
-  projectId: "agriai-bfb9e",
-  storageBucket: "agriai-bfb9e.firebasestorage.app",
-  messagingSenderId: "801770241446",
-  appId: "1:801770241446:web:0c3db60e8c5fd005fb6367",
-  measurementId: "G-KQFT22KD7R"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
