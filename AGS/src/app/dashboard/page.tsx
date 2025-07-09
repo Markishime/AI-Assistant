@@ -25,7 +25,6 @@ import {
   BookOpen,
   Database,
   Activity,
-  Upload,
   Settings,
   RefreshCw
 } from 'lucide-react';
