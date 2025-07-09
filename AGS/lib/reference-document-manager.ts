@@ -1,4 +1,4 @@
-import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
+import { OpenAIEmbeddings } from '@langchain/openai';
 import { FaissStore } from '@langchain/community/vectorstores/faiss';
 import { TextLoader } from 'langchain/document_loaders/fs/text';
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
@@ -9,16 +9,30 @@ import path from 'path';
 
 export class ReferenceDocumentManager {
   private vectorStore: FaissStore | null = null;
-  private embeddings: GoogleGenerativeAIEmbeddings;
+  private embeddings: OpenAIEmbeddings;
   private textSplitter: RecursiveCharacterTextSplitter;
   private readonly documentsPath = path.join(process.cwd(), 'reference_documents');
   private readonly vectorStorePath = path.join(process.cwd(), 'vector_store');
 
   constructor() {
-    this.embeddings = new GoogleGenerativeAIEmbeddings({
-      apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
-      modelName: 'text-embedding-004',
-    });
+    try {
+      const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+      
+      if (!apiKey) {
+        throw new Error('OpenAI API key not found. Please set OPENAI_API_KEY or NEXT_PUBLIC_OPENAI_API_KEY environment variable.');
+      }
+      
+      this.embeddings = new OpenAIEmbeddings({
+        openAIApiKey: apiKey,
+        modelName: 'text-embedding-3-small', // Using OpenAI's embedding model
+        dimensions: 1536, // Standard dimension size
+      });
+      
+      console.log('OpenAI embeddings initialized successfully');
+    } catch (error) {
+      console.error('Error initializing OpenAIEmbeddings:', error);
+      throw new Error(`Failed to initialize embeddings: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 
     this.textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 1000,
@@ -43,8 +57,23 @@ export class ReferenceDocumentManager {
       }
     } catch (error) {
       console.error('Error initializing vector store:', error);
-      // Fallback: create new vector store
-      await this.createVectorStore();
+      
+      // Fallback: create minimal vector store with dummy content
+      try {
+        console.log('Creating fallback vector store with minimal content...');
+        const dummyDoc = new Document({
+          pageContent: 'Oil palm agriculture knowledge base. Basic nutrient requirements: N, P, K are essential macronutrients. Soil pH should be between 5.5-6.5 for optimal growth.',
+          metadata: { source: 'fallback', type: 'basic_knowledge' }
+        });
+        
+        this.vectorStore = await FaissStore.fromDocuments([dummyDoc], this.embeddings);
+        await this.vectorStore.save(this.vectorStorePath);
+        console.log('Fallback vector store created successfully');
+      } catch (fallbackError) {
+        console.error('Failed to create fallback vector store:', fallbackError);
+        // Continue without vector store - the system will work without it
+        this.vectorStore = null;
+      }
     }
   }
 
@@ -61,15 +90,20 @@ export class ReferenceDocumentManager {
     }
   }
 
-  /**
-   * Create vector store from reference documents
-   */
+
   private async createVectorStore(): Promise<void> {
     try {
       const documents = await this.loadAllDocuments();
       
-      if (documents.length === 0) {
-        console.log('No documents found, creating empty vector store');
+      // Filter out documents with invalid content
+      const validDocuments = documents.filter(doc => 
+        doc.pageContent && 
+        typeof doc.pageContent === 'string' && 
+        doc.pageContent.trim().length > 0
+      );
+      
+      if (validDocuments.length === 0) {
+        console.log('No valid documents found, creating empty vector store');
         // Create with a dummy document
         const dummyDoc = new Document({
           pageContent: 'Oil palm agriculture knowledge base initialization document.',
@@ -77,8 +111,14 @@ export class ReferenceDocumentManager {
         });
         this.vectorStore = await FaissStore.fromDocuments([dummyDoc], this.embeddings);
       } else {
-        console.log(`Creating vector store from ${documents.length} document chunks...`);
-        this.vectorStore = await FaissStore.fromDocuments(documents, this.embeddings);
+        console.log(`Creating vector store from ${validDocuments.length} valid document chunks...`);
+        // Ensure all documents have proper content
+        const sanitizedDocuments = validDocuments.map(doc => new Document({
+          pageContent: String(doc.pageContent).trim(),
+          metadata: doc.metadata || {}
+        }));
+        
+        this.vectorStore = await FaissStore.fromDocuments(sanitizedDocuments, this.embeddings);
       }
 
       // Save vector store
@@ -102,9 +142,29 @@ export class ReferenceDocumentManager {
       for (const filePath of files) {
         try {
           const documents = await this.loadDocument(filePath);
-          const chunks = await this.textSplitter.splitDocuments(documents);
-          allDocuments.push(...chunks);
-          console.log(`Loaded ${chunks.length} chunks from ${path.basename(filePath)}`);
+          
+          // Filter out any documents with invalid content before splitting
+          const validDocuments = documents.filter(doc => 
+            doc.pageContent && 
+            typeof doc.pageContent === 'string' && 
+            doc.pageContent.trim().length > 0
+          );
+          
+          if (validDocuments.length > 0) {
+            const chunks = await this.textSplitter.splitDocuments(validDocuments);
+            
+            // Filter chunks again to ensure no empty content
+            const validChunks = chunks.filter(chunk => 
+              chunk.pageContent && 
+              typeof chunk.pageContent === 'string' && 
+              chunk.pageContent.trim().length > 0
+            );
+            
+            allDocuments.push(...validChunks);
+            console.log(`Loaded ${validChunks.length} valid chunks from ${path.basename(filePath)}`);
+          } else {
+            console.warn(`No valid content found in ${path.basename(filePath)}`);
+          }
         } catch (error) {
           console.error(`Error loading document ${filePath}:`, error);
         }

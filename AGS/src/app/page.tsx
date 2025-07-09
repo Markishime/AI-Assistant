@@ -84,7 +84,11 @@ export default function OnboardingPage() {
   };
 
   const handleStartDemo = () => {
-    router.push('/dashboard');
+    if (user) {
+      router.push('/dashboard');
+    } else {
+      router.push('/login');
+    }
   };
 
   return (

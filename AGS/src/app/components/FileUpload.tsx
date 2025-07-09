@@ -11,6 +11,7 @@ interface FileUploadProps {
 export default function FileUpload({ onUpload }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [sampleType, setSampleType] = useState<'soil' | 'leaf'>('soil');
+  const [useEnhancedProcessor, setUseEnhancedProcessor] = useState(true);
   const [loading, setLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
@@ -47,14 +48,25 @@ export default function FileUpload({ onUpload }: FileUploadProps) {
       const fileType = droppedFile.type.toLowerCase();
       const fileName = droppedFile.name.toLowerCase();
       
-      if (fileType.includes('excel') || fileType.includes('spreadsheet') || 
+      const isStandardFile = fileType.includes('excel') || fileType.includes('spreadsheet') || 
           fileName.endsWith('.xlsx') || fileName.endsWith('.xls') ||
           fileType.includes('image') || fileName.endsWith('.jpg') || 
           fileName.endsWith('.jpeg') || fileName.endsWith('.png') ||
-          fileType.includes('pdf') || fileName.endsWith('.pdf')) {
+          fileType.includes('pdf') || fileName.endsWith('.pdf');
+          
+      const isEnhancedFile = useEnhancedProcessor && (
+          fileName.endsWith('.docx') || fileName.endsWith('.doc') ||
+          fileName.endsWith('.csv') || fileType.includes('csv') ||
+          fileType.includes('word') || fileType.includes('document')
+      );
+      
+      if (isStandardFile || isEnhancedFile) {
         handleFileSelect(droppedFile);
       } else {
-        alert('Please select a valid file type: Excel (.xlsx, .xls), Images (.jpg, .png), or PDF (.pdf)');
+        const acceptedTypes = useEnhancedProcessor 
+          ? 'Excel (.xlsx, .xls), PDF, Word (.docx), CSV, or Images (.jpg, .png)'
+          : 'Excel (.xlsx, .xls), Images (.jpg, .png, .pdf)';
+        alert(`Please select a valid file type: ${acceptedTypes}`);
       }
     }
   };
@@ -67,18 +79,26 @@ export default function FileUpload({ onUpload }: FileUploadProps) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('sampleType', sampleType);
+    formData.append('useEnhanced', useEnhancedProcessor.toString());
 
     try {
-      const res = await fetch('/api/upload', {
+      const endpoint = useEnhancedProcessor ? '/api/upload-enhanced' : '/api/upload';
+      const res = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       });
       const result = await res.json();
       
-      // Pass both the data and analysis to the parent
-      onUpload(result.data, result.analysis);
+      if (result.success) {
+        // Pass both the data and analysis to the parent
+        onUpload(result.data, result.analysis);
+      } else {
+        console.error('Upload failed:', result.error);
+        alert(`Upload failed: ${result.error}`);
+      }
     } catch (error) {
       console.error('Upload failed:', error);
+      alert('Upload failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -97,6 +117,27 @@ export default function FileUpload({ onUpload }: FileUploadProps) {
             <option value="soil">Soil</option>
             <option value="leaf">Leaf</option>
           </select>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            id="enhanced-processor"
+            checked={useEnhancedProcessor}
+            onChange={(e) => setUseEnhancedProcessor(e.target.checked)}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="enhanced-processor" className="text-sm font-medium text-gray-700">
+            Use Enhanced Document Processor
+          </label>
+          <div className="group relative">
+            <span className="inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-blue-500 rounded-full cursor-help">
+              ?
+            </span>
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none w-48 z-10">
+              Uses advanced LangChain AI for better extraction from PDF, Word, CSV, and Excel files with structured data recognition.
+            </div>
+          </div>
         </div>
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Upload File</label>
@@ -129,12 +170,20 @@ export default function FileUpload({ onUpload }: FileUploadProps) {
             <p className={`text-sm mb-1 ${dragActive ? 'text-blue-600' : 'text-gray-600'}`}>
               {dragActive ? 'Drop your file here' : 'Click to browse files or drag & drop'}
             </p>
-            <p className="text-xs text-gray-500">Excel (.xlsx, .xls) or Images (.jpg, .png, .pdf)</p>
+            <p className="text-xs text-gray-500">
+              {useEnhancedProcessor 
+                ? 'Excel (.xlsx, .xls), PDF, Word (.docx), CSV, or Images (.jpg, .png)'
+                : 'Excel (.xlsx, .xls) or Images (.jpg, .png, .pdf)'
+              }
+            </p>
           </div>
           <input
             id="file-input"
             type="file"
-            accept=".xlsx,.xls,.jpg,.jpeg,.png,.pdf"
+            accept={useEnhancedProcessor 
+              ? ".xlsx,.xls,.jpg,.jpeg,.png,.pdf,.docx,.doc,.csv" 
+              : ".xlsx,.xls,.jpg,.jpeg,.png,.pdf"
+            }
             onChange={(e) => {
               const selectedFile = e.target.files?.[0] || null;
               if (selectedFile) {
@@ -185,6 +234,18 @@ export default function FileUpload({ onUpload }: FileUploadProps) {
               </button>
             </div>
           )}
+        </div>
+        <div className="flex items-center">
+          <input
+            id="enhanced-processor"
+            type="checkbox"
+            checked={useEnhancedProcessor}
+            onChange={(e) => setUseEnhancedProcessor(e.target.checked)}
+            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label htmlFor="enhanced-processor" className="ml-2 block text-sm text-gray-700">
+            Use Enhanced Document Processing
+          </label>
         </div>
         <button
           type="submit"

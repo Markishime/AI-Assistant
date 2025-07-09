@@ -11,7 +11,6 @@ import {
   DropdownTrigger, 
   DropdownMenu, 
   DropdownItem, 
-  Avatar,
   Navbar,
   NavbarBrand,
   NavbarContent,
@@ -19,7 +18,6 @@ import {
   NavbarMenuToggle,
   NavbarMenu,
   NavbarMenuItem,
-  Link,
   Divider,
   User
 } from '@heroui/react';
@@ -56,7 +54,7 @@ export default function Navigation() {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Documents', href: '/documents', icon: BookOpen },
     { name: 'History', href: '/history', icon: History },
     { name: 'Reports', href: '/reports', icon: FileText },

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getReferenceDocumentManager } from '@/lib/reference-document-manager';
+import { getSupabaseReferenceManager } from '@/lib/supabase-reference-manager';
 
 export async function GET() {
   try {
-    const documentManager = getReferenceDocumentManager();
+    const documentManager = getSupabaseReferenceManager();
     
-    // Initialize vector store if not already done
-    await documentManager.initializeVectorStore();
+    // Initialize the reference document system
+    await documentManager.initialize();
     
     // Get statistics
     const stats = await documentManager.getStats();
@@ -14,12 +14,13 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       stats,
-      message: 'Reference document system initialized successfully'
+      message: 'Supabase reference document system initialized successfully'
     });
   } catch (error) {
     console.error('Reference documents initialization error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
-      { success: false, error: 'Failed to initialize reference document system' },
+      { success: false, error: `Failed to initialize reference document system: ${errorMessage}` },
       { status: 500 }
     );
   }
@@ -28,7 +29,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { action, query } = await request.json();
-    const documentManager = getReferenceDocumentManager();
+    const documentManager = getSupabaseReferenceManager();
     
     if (action === 'search') {
       if (!query) {
@@ -43,21 +44,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         results: results.map(doc => ({
-          content: doc.pageContent,
-          source: doc.metadata.source || 'Unknown',
-          score: doc.metadata.score || 0
+          content: doc.content,
+          source: doc.document_source || doc.document_title || 'Unknown',
+          score: doc.similarity || 0,
+          metadata: doc.metadata
         }))
       });
     }
     
     if (action === 'rebuild') {
-      await documentManager.rebuildVectorStore();
+      await documentManager.rebuildEmbeddings();
       const stats = await documentManager.getStats();
       
       return NextResponse.json({
         success: true,
         stats,
-        message: 'Vector store rebuilt successfully'
+        message: 'Document embeddings rebuilt successfully'
       });
     }
     
@@ -76,8 +78,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Reference documents API error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: `Internal server error: ${errorMessage}` },
       { status: 500 }
     );
   }

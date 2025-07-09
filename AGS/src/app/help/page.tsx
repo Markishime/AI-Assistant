@@ -1,6 +1,7 @@
 'use client';
 
 import DashboardLayout from '../components/DashboardLayout';
+import SupportContact from '../components/SupportContact';
 import { 
   Button, 
   Card, 
@@ -8,7 +9,6 @@ import {
   CardHeader, 
   Accordion, 
   AccordionItem, 
-  Link
 } from '@heroui/react';
 import { 
   BookOpen, 
@@ -27,6 +27,37 @@ import {
 } from 'lucide-react';
 
 export default function HelpPage() {
+  const handleEmailSupport = () => {
+    const subject = encodeURIComponent("Oil Palm AGS - Support Request from Help Page");
+    const body = encodeURIComponent(`Hello Oil Palm AGS Support Team,
+
+I need assistance with the following:
+
+Issue Description:
+[Please describe your issue here]
+
+Steps I've tried:
+[Please list what you've already attempted]
+
+Page: Help & Support
+System Information:
+- Browser: ${navigator.userAgent}
+- Date: ${new Date().toLocaleDateString()}
+- Time: ${new Date().toLocaleTimeString()}
+
+Additional Details:
+[Any other relevant information]
+
+Thank you for your assistance.
+
+Best regards,
+[Your Name]`);
+
+    // Open Gmail compose with pre-filled content
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=support@oilpalmags.com&su=${subject}&body=${body}`;
+    window.open(gmailUrl, '_blank');
+  };
+
   const quickStartSteps = [
     {
       icon: Upload,
@@ -158,7 +189,6 @@ export default function HelpPage() {
         <Card>
           <CardHeader>
             <h2 className="text-2xl font-bold text-gray-900">Key Features</h2>
-            <p className="text-gray-600">Discover what makes Oil Palm AI Assistant powerful</p>
           </CardHeader>
           <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -193,7 +223,6 @@ export default function HelpPage() {
         <Card>
           <CardHeader>
             <h2 className="text-2xl font-bold text-gray-900">Frequently Asked Questions</h2>
-            <p className="text-gray-600">Find answers to common questions about the platform</p>
           </CardHeader>
           <CardBody>
             <Accordion variant="splitted">
@@ -247,57 +276,25 @@ export default function HelpPage() {
               <p className="text-gray-600 mb-4">
                 We typically respond within 24 hours
               </p>
-              <Button color="secondary" className="w-full">
+              <Button 
+                color="secondary" 
+                className="w-full"
+                onClick={handleEmailSupport}
+              >
                 Send Email
               </Button>
             </CardBody>
           </Card>
         </div>
 
-        {/* Additional Resources */}
+        {/* Comprehensive Support Contact Component */}
         <Card>
           <CardHeader>
-            <h2 className="text-2xl font-bold text-gray-900">Additional Resources</h2>
-            <p className="text-gray-600">Explore more ways to get the most out of the platform</p>
+            <h2 className="text-2xl font-bold text-gray-900">More Support Options</h2>
+            <p className="text-gray-600">Choose the support method that works best for you</p>
           </CardHeader>
           <CardBody>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Link 
-                href="/docs" 
-                className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors group"
-              >
-                <BookOpen className="w-5 h-5 text-blue-500" />
-                <div>
-                  <p className="font-medium text-gray-900 group-hover:text-blue-600">Documentation</p>
-                  <p className="text-sm text-gray-500">Detailed guides and API reference</p>
-                </div>
-                <ExternalLink className="w-4 h-4 text-gray-400 ml-auto" />
-              </Link>
-
-              <Link 
-                href="/tutorials" 
-                className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors group"
-              >
-                <FileText className="w-5 h-5 text-green-500" />
-                <div>
-                  <p className="font-medium text-gray-900 group-hover:text-green-600">Video Tutorials</p>
-                  <p className="text-sm text-gray-500">Step-by-step video guides</p>
-                </div>
-                <ExternalLink className="w-4 h-4 text-gray-400 ml-auto" />
-              </Link>
-
-              <Link 
-                href="/community" 
-                className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors group"
-              >
-                <MessageCircle className="w-5 h-5 text-purple-500" />
-                <div>
-                  <p className="font-medium text-gray-900 group-hover:text-purple-600">Community Forum</p>
-                  <p className="text-sm text-gray-500">Connect with other users</p>
-                </div>
-                <ExternalLink className="w-4 h-4 text-gray-400 ml-auto" />
-              </Link>
-            </div>
+            <SupportContact />
           </CardBody>
         </Card>
       </div>
