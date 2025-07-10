@@ -395,8 +395,8 @@ RETURNS TABLE (
   content text,
   metadata jsonb,
   similarity float,
-  document_title text,
-  document_source text,
+  document_title varchar(500),
+  document_source varchar(500),
   chunk_index int
 )
 LANGUAGE plpgsql
@@ -409,8 +409,8 @@ BEGIN
     de.content,
     de.metadata,
     1 - (de.embedding <=> query_embedding) as similarity,
-    rd.title as document_title,
-    rd.source as document_source,
+    rd.title::varchar(500) as document_title,
+    rd.source::varchar(500) as document_source,
     de.chunk_index
   FROM document_embeddings de
   JOIN reference_documents rd ON de.document_id = rd.id
@@ -549,11 +549,19 @@ CREATE TABLE prompt_templates (
     description TEXT,
     template TEXT NOT NULL,
     variables TEXT[] DEFAULT '{}',
-    category VARCHAR(50) NOT NULL CHECK (category IN ('soil', 'leaf', 'general', 'interpretation', 'recommendations')),
+    category VARCHAR(50) NOT NULL CHECK (category IN ('soil', 'leaf', 'general', 'interpretation', 'recommendations', 'malaysian_specific')),
     priority VARCHAR(20) NOT NULL DEFAULT 'medium' CHECK (priority IN ('high', 'medium', 'low')),
     is_active BOOLEAN NOT NULL DEFAULT true,
     constraints TEXT[] DEFAULT '{}',
     examples TEXT[] DEFAULT '{}',
+    context_rules TEXT[] DEFAULT '{}',
+    specificity_level VARCHAR(20) NOT NULL DEFAULT 'medium' CHECK (specificity_level IN ('high', 'medium', 'low')),
+    malaysian_context BOOLEAN NOT NULL DEFAULT false,
+    scientific_rigor VARCHAR(20) NOT NULL DEFAULT 'medium' CHECK (scientific_rigor IN ('high', 'medium', 'low')),
+    version VARCHAR(20) NOT NULL DEFAULT '1.0',
+    usage_count INTEGER NOT NULL DEFAULT 0,
+    success_rate DECIMAL(3,2) NOT NULL DEFAULT 0.80 CHECK (success_rate >= 0 AND success_rate <= 1),
+    last_used TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_by UUID REFERENCES auth.users(id)

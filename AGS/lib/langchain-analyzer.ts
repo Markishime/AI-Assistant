@@ -3,6 +3,7 @@ import { PromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
 import { getSupabaseReferenceManager, SearchResult } from './supabase-reference-manager';
 import { createClient } from '@supabase/supabase-js';
+import { dynamicPromptManager, PromptContext } from './dynamic-prompt-manager';
 
 // Enhanced schemas for comprehensive analysis
 const improvementPlanItemSchema = z.object({
@@ -580,34 +581,26 @@ Respond with ONLY a valid JSON object in this exact format:
   }
 
   /**
-   * Get dynamic prompt from Supabase database
+   * Get dynamic prompt based on context and user preferences
    */
   private async getDynamicPrompt(
     sampleType: 'soil' | 'leaf',
     userPriorities: UserPriorities
   ): Promise<string> {
     try {
-      if (!this.supabase) {
-        console.warn('Supabase client not available, using default prompt');
-        return this.getDefaultPrompt(sampleType, userPriorities);
-      }
+      const context: PromptContext = {
+        sampleType,
+        userPriorities,
+        dataValues: {},
+        referenceData: {},
+        nutrientBalance: {},
+        benchmarking: {},
+        referenceContext: ''
+      };
 
-      const { data, error } = await this.supabase
-        .from('prompts')
-        .select('template')
-        .eq('is_active', true)
-        .eq('sample_type', sampleType)
-        .eq('language', userPriorities.language)
-        .single();
-
-      if (error || !data) {
-        console.warn('Could not load dynamic prompt, using default');
-        return this.getDefaultPrompt(sampleType, userPriorities);
-      }
-
-      return (data as { template: string }).template;
+      return await dynamicPromptManager.getOptimalPrompt(context);
     } catch (error) {
-      console.warn('Supabase prompt fetch failed:', error);
+      console.error('Error getting dynamic prompt:', error);
       return this.getDefaultPrompt(sampleType, userPriorities);
     }
   }
@@ -679,7 +672,11 @@ Respond with ONLY valid JSON in the specified format.
     },
     referenceContext: string
   ): Promise<string> {
-    const template = PromptTemplate.fromTemplate(dynamicPrompt + `
+    try {
+      // Escape any curly braces in the dynamic prompt to prevent template parsing errors
+      const escapedDynamicPrompt = dynamicPrompt.replace(/\{/g, '\\{').replace(/\}/g, '\\}');
+      
+      const template = PromptTemplate.fromTemplate(escapedDynamicPrompt + `
 
 ANALYSIS DATA:
 {dataValues}
@@ -707,18 +704,22 @@ Provide comprehensive analysis with enhanced features including automated nutrie
 regional benchmarking, and 5-year yield forecasting. Respond with valid JSON only.
 `);
 
-    return await template.format({
-      dataValues: JSON.stringify(values, null, 2),
-      referenceStandards: JSON.stringify(referenceData, null, 2),
-      nutrientBalance: JSON.stringify(nutrientBalance, null, 2),
-      benchmarking: JSON.stringify(benchmarking, null, 2),
-      referenceContext: referenceContext || 'No additional context available',
-      focus: userPriorities.focus,
-      budget: userPriorities.budget,
-      timeframe: userPriorities.timeframe,
-      soilType: userPriorities.soilType,
-      plantationType: userPriorities.plantationType,
-    });
+      return await template.format({
+        dataValues: JSON.stringify(values, null, 2),
+        referenceStandards: JSON.stringify(referenceData, null, 2),
+        nutrientBalance: JSON.stringify(nutrientBalance, null, 2),
+        benchmarking: JSON.stringify(benchmarking, null, 2),
+        referenceContext: referenceContext || 'No additional context available',
+        focus: userPriorities.focus,
+        budget: userPriorities.budget,
+        timeframe: userPriorities.timeframe,
+        soilType: userPriorities.soilType,
+        plantationType: userPriorities.plantationType,
+      });
+    } catch (error) {
+      console.error('Error building comprehensive prompt:', error);
+      throw new Error(`Template parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
