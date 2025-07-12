@@ -1,6 +1,7 @@
 import React from 'react';
 import './globals.css';
-// import { Providers } from './components/Providers';
+import ErrorBoundary from './components/ErrorBoundary';
+import { AuthProvider } from './components/AuthProvider';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -12,7 +13,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-background text-foreground">
-        {children}
+        <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

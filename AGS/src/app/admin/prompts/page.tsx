@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Save, X, Brain, FileText, BarChart3, TrendingUp, Users, Target } from 'lucide-react';
+import { Plus, Edit, Trash2, CheckCircle, X, Brain, FileText, BarChart3, TrendingUp, Users, Target } from 'lucide-react';
 import PromptManagement from '../../components/PromptManagement';
 
 interface TemplateAnalytics {

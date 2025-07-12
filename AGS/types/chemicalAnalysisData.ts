@@ -34,7 +34,7 @@ export interface ExtractedData {
     fileName: string;
     fileSize: number;
     mimeType: string;
-    extractionMethod: 'pdf' | 'ocr' | 'excel' | 'word' | 'csv';
+    extractionMethod: 'pdf' | 'ocr' | 'excel' | 'word' | 'csv' | 'text' | 'fallback';
     processingTime: number;
   };
 }

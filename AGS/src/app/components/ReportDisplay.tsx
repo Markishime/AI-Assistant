@@ -20,9 +20,10 @@ import {
   Target,
   DollarSign,
   Clock,
-  Award
+  Award,
+  Cloud
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ReportDisplayProps {
   report: AnalysisReport | null;
@@ -54,9 +55,190 @@ interface RAGContext {
   keywords: string[];
 }
 
-export default function ReportDisplay({ report, scientificReferences = [], ragContext = [] }: ReportDisplayProps) {
+// Predictive Insights Section
+function PredictiveInsightsSection({ userId }: { userId: string }) {
+  const [insights, setInsights] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchInsights() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/analytics/predictive-insights?userId=${userId}`);
+        const data = await res.json();
+        setInsights(data.insights || []);
+      } catch (e) {
+        setInsights([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (userId) fetchInsights();
+  }, [userId]);
+
+  if (loading) return <div className="text-gray-500">Loading predictive insights...</div>;
+  if (!insights.length) return null;
+
+  return (
+    <div className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 rounded-xl p-6 border border-orange-200 dark:border-orange-800/50 mt-8">
+      <h3 className="text-lg font-semibold text-orange-800 dark:text-orange-300 mb-4 flex items-center gap-2">
+        <Award className="w-5 h-5" /> Predictive Insights
+      </h3>
+      <div className="space-y-4">
+        {insights.map((insight, idx) => (
+          <div key={insight.id} className="bg-white dark:bg-slate-800/50 rounded-lg p-4 border border-orange-100 dark:border-orange-800/30">
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`text-sm font-bold ${insight.impact === 'positive' ? 'text-green-600' : insight.impact === 'negative' ? 'text-red-600' : 'text-gray-600'}`}>{insight.title}</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700 ml-2">{insight.type}</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 ml-2">{insight.confidence}% confidence</span>
+            </div>
+            <div className="text-gray-700 dark:text-gray-300 mb-2">{insight.description}</div>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {insight.recommendations?.map((rec: string, i: number) => (
+                <span key={i} className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs">{rec}</span>
+              ))}
+            </div>
+            <div className="text-xs text-gray-500">Timeframe: {insight.timeframe} | Last updated: {new Date(insight.lastUpdated).toLocaleDateString()}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// User Feedback Section
+function UserFeedbackSection({ reportId }: { reportId: string }) {
+  const [rating, setRating] = useState<number>(0);
+  const [comment, setComment] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const submitFeedback = async () => {
+    setLoading(true);
+    await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reportId, rating, comment })
+    });
+    setLoading(false);
+    setSubmitted(true);
+  };
+
+  if (submitted) return <div className="text-green-600 font-semibold mt-4">Thank you for your feedback!</div>;
+
+  return (
+    <div className="mt-8 bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-950/20 dark:to-blue-950/20 rounded-xl p-6 border border-emerald-200 dark:border-emerald-800/50">
+      <h3 className="text-lg font-semibold text-emerald-800 dark:text-emerald-300 mb-2">Your Feedback</h3>
+      <div className="flex items-center gap-2 mb-2">
+        {[1,2,3,4,5].map(star => (
+          <button key={star} onClick={() => setRating(star)} className={star <= rating ? 'text-yellow-400' : 'text-gray-300'}>
+            <Star className="w-6 h-6" />
+          </button>
+        ))}
+        <span className="ml-2 text-sm text-gray-600">{rating ? `${rating} / 5` : 'Rate this analysis'}</span>
+      </div>
+      <textarea
+        className="w-full p-2 border border-gray-200 rounded mb-2"
+        rows={3}
+        placeholder="Additional comments (optional)"
+        value={comment}
+        onChange={e => setComment(e.target.value)}
+      />
+      <button
+        onClick={submitFeedback}
+        disabled={loading || !rating}
+        className="bg-emerald-600 text-white px-4 py-2 rounded disabled:opacity-50"
+      >
+        {loading ? 'Submitting...' : 'Submit Feedback'}
+      </button>
+    </div>
+  );
+}
+
+function RealTimeDataInfoBox() {
+  const [weather, setWeather] = useState<any>(null);
+  const [market, setMarket] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const w = await fetch('/api/realtime/weather');
+        const wData = await w.json();
+        setWeather(wData.weather?.current_weather || null);
+        const m = await fetch('/api/realtime/market');
+        const mData = await m.json();
+        setMarket(mData);
+      } catch (e) {
+        setWeather(null);
+        setMarket(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading) return <div className="mb-6"><div className="bg-white rounded-xl p-4 shadow border text-gray-500">Loading real-time data...</div></div>;
+  return (
+    <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl p-4 border border-blue-200 flex flex-col gap-2">
+        <div className="flex items-center gap-2 mb-1"><Cloud className="w-5 h-5 text-blue-500" /><span className="font-semibold text-blue-800">Current Weather</span></div>
+        {weather ? (
+          <div className="flex flex-wrap gap-4 text-sm">
+            <span>Temp: <b>{weather.temperature}°C</b></span>
+            <span>Humidity: <b>{weather.relative_humidity_2m ?? '-'}%</b></span>
+            <span>Rainfall: <b>{weather.precipitation ?? '-'} mm</b></span>
+            <span>Wind: <b>{weather.windspeed ?? '-'} km/h</b></span>
+          </div>
+        ) : <span className="text-gray-500">No data</span>}
+      </div>
+      <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200 flex flex-col gap-2">
+        <div className="flex items-center gap-2 mb-1"><BarChart3 className="w-5 h-5 text-yellow-600" /><span className="font-semibold text-yellow-800">Palm Oil Market</span></div>
+        {market ? (
+          <div className="flex flex-wrap gap-4 text-sm">
+            <span>Price: <b>{market.price} {market.currency}/{market.unit}</b></span>
+            <span>Trend: <b className={market.trend === 'up' ? 'text-green-600' : 'text-red-600'}>{market.trend === 'up' ? '↑ Up' : '↓ Down'}</b></span>
+            <span>Last Updated: <b>{new Date(market.lastUpdated).toLocaleTimeString()}</b></span>
+          </div>
+        ) : <span className="text-gray-500">No data</span>}
+      </div>
+    </div>
+  );
+}
+
+export default function ReportDisplay({ report, scientificReferences = [], ragContext = [], userId }: ReportDisplayProps & { userId: string }) {
   const [activeTab, setActiveTab] = useState<'analysis' | 'references' | 'methodology'>('analysis');
   const [expandedReference, setExpandedReference] = useState<string | null>(null);
+
+  // Add predictive insights and feedback to export
+  const [predictiveInsights, setPredictiveInsights] = useState<any[]>([]);
+  const [feedback, setFeedback] = useState<{ rating: number; comment: string } | null>(null);
+
+  useEffect(() => {
+    async function fetchInsights() {
+      if (!userId) return;
+      const res = await fetch(`/api/analytics/predictive-insights?userId=${userId}`);
+      const data = await res.json();
+      setPredictiveInsights(data.insights || []);
+    }
+    fetchInsights();
+  }, [userId]);
+
+  const [enabledModules, setEnabledModules] = useState<string[]>([]);
+  useEffect(() => {
+    async function fetchModules() {
+      try {
+        const res = await fetch('/api/admin/modules');
+        const data = await res.json();
+        setEnabledModules((data.modules || []).filter((m: any) => m.enabled).map((m: any) => m.name));
+      } catch {
+        setEnabledModules(['weather','market','rag','scientific','predictive','sustainability','cost','yield']);
+      }
+    }
+    fetchModules();
+  }, []);
 
   if (!report) return null;
 
@@ -65,6 +247,8 @@ export default function ReportDisplay({ report, scientificReferences = [], ragCo
       ...report,
       scientificReferences,
       ragContext,
+      predictiveInsights,
+      feedback,
       exportDate: new Date().toISOString()
     };
     
@@ -93,6 +277,7 @@ export default function ReportDisplay({ report, scientificReferences = [], ragCo
 
   return (
     <div className="w-full max-w-none">
+      {enabledModules.includes('weather') && <RealTimeDataInfoBox />}
       {/* Enhanced Header */}
       <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/30 dark:via-teal-950/30 dark:to-cyan-950/30 rounded-2xl p-6 mb-8 border border-emerald-200 dark:border-emerald-800/50">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -614,6 +799,10 @@ export default function ReportDisplay({ report, scientificReferences = [], ragCo
           </div>
         </div>
       )}
+      {/* Predictive Insights Section */}
+      {enabledModules.includes('predictive') && <PredictiveInsightsSection userId={userId} />}
+      {/* User Feedback Section */}
+      <UserFeedbackSection reportId={report?.timestamp || 'unknown'} />
     </div>
   );
 }

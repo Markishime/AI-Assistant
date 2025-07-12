@@ -1,0 +1,20 @@
+Parameter,Value,Unit,Method
+pH,5.2,pH units,Electrode
+Organic Matter,2.8,%,Walkley-Black
+Nitrogen (Total),0.18,%,Kjeldahl
+Phosphorus (Available),12.5,ppm,Bray-1
+Potassium (Exchangeable),68,ppm,Ammonium acetate
+Calcium,2.1,cmol/kg,Ammonium acetate
+Magnesium,0.8,cmol/kg,Ammonium acetate
+Sulfur,8.2,ppm,Turbidimetry
+Boron,0.45,ppm,Hot water
+Zinc,1.2,ppm,DTPA
+Copper,0.8,ppm,DTPA
+Iron,45,ppm,DTPA
+Manganese,12,ppm,DTPA
+CEC,8.5,cmol/kg,Ammonium acetate
+Base Saturation,35,%,Calculated
+Sample ID,SOIL-001,,
+Location,"Johor, Malaysia",,
+Date,2024-01-15,,
+Depth,"0-20 cm",, 

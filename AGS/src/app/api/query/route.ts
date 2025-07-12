@@ -24,18 +24,38 @@ export async function POST(request: NextRequest) {
     const maxTokens = data.max_tokens || 4000;
 
     if (includeContext) {
-      // Get relevant context for RAG applications
-      const contextResult = await ragService.getRelevantContext(data.query, maxTokens);
+      // For context requests, use queryWithMalaysianContext
+      const contextResults = await ragService.queryWithMalaysianContext(data.query, limit);
       
-      if (!contextResult.success) {
+      if (!contextResults || !Array.isArray(contextResults)) {
         return NextResponse.json(
           { 
             success: false, 
             message: "Failed to retrieve context",
-            error: contextResult.error
+            error: "No results returned"
           },
           { status: 500 }
         );
+      }
+
+      // Build context string from results
+      let context = '';
+      let tokenCount = 0;
+      const sources = [];
+
+      for (const result of contextResults) {
+        const resultTokens = result.content.length / 4;
+        if (tokenCount + resultTokens <= maxTokens) {
+          context += `${result.content}\n\n`;
+          sources.push({
+            source: result.source,
+            confidence: result.confidence,
+            malaysianContextScore: result.malaysianContextScore
+          });
+          tokenCount += resultTokens;
+        } else {
+          break;
+        }
       }
 
       return NextResponse.json({
@@ -43,24 +63,21 @@ export async function POST(request: NextRequest) {
         message: "Context retrieved successfully",
         data: {
           query: data.query,
-          context: contextResult.context,
-          sources: contextResult.sources,
-          token_estimate: Math.ceil(contextResult.context.length / 4)
+          context: context.trim(),
+          sources,
+          token_estimate: Math.ceil(tokenCount)
         }
       });
     } else {
       // Standard query for individual results
-      const queryResult = await ragService.query(data.query, { 
-        limit,
-        includeDistances: true 
-      });
+      const queryResult = await ragService.query(data.query, limit);
 
-      if (!queryResult.success) {
+      if (!queryResult || !Array.isArray(queryResult)) {
         return NextResponse.json(
           { 
             success: false, 
             message: "Failed to query documents",
-            error: queryResult.error
+            error: "No results returned"
           },
           { status: 500 }
         );
@@ -71,8 +88,8 @@ export async function POST(request: NextRequest) {
         message: "Query executed successfully",
         data: {
           query: data.query,
-          results: queryResult.results,
-          total_results: queryResult.results.length
+          results: queryResult,
+          total_results: queryResult.length
         }
       });
     }
@@ -105,24 +122,24 @@ export async function GET(request: NextRequest) {
     }
 
     if (context) {
-      const contextResult = await ragService.getRelevantContext(query);
+      const contextResults = await ragService.queryWithMalaysianContext(query, limit);
       
       return NextResponse.json({
         success: true,
         data: {
           query,
-          context: contextResult.context,
-          sources: contextResult.sources
+          context: contextResults.map(r => r.content).join('\n\n'),
+          sources: contextResults.map(r => ({ source: r.source, confidence: r.confidence }))
         }
       });
     } else {
-      const queryResult = await ragService.query(query, { limit });
+      const queryResult = await ragService.query(query, limit);
       
       return NextResponse.json({
         success: true,
         data: {
           query,
-          results: queryResult.results
+          results: queryResult
         }
       });
     }

@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '@/lib/firebase';
+import { useAuth } from './components/AuthProvider';
+
 import { StaggerContainer, StaggerItem, FadeInUp } from './components/MotionWrapper';
 import { Providers } from './components/Providers';
 import { 
@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export default function OnboardingPage() {
-  const [user] = useAuthState(auth);
+  const { user } = useAuth();
   const router = useRouter();
 
   const onboardingSteps = [
@@ -77,7 +77,12 @@ export default function OnboardingPage() {
 
   const handleGetStarted = () => {
     if (user) {
+      // Role-based routing
+      if (user.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
       router.push('/dashboard');
+      }
     } else {
       router.push('/login');
     }
@@ -85,7 +90,12 @@ export default function OnboardingPage() {
 
   const handleStartDemo = () => {
     if (user) {
+      // Role-based routing
+      if (user.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
       router.push('/dashboard');
+      }
     } else {
       router.push('/login');
     }
@@ -111,7 +121,7 @@ export default function OnboardingPage() {
             <div className="flex items-center gap-4">
               {user ? (
                 <button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={handleGetStarted}
                   className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
                   Go to Dashboard
@@ -125,7 +135,7 @@ export default function OnboardingPage() {
                     Sign In
                   </button>
                   <button
-                    onClick={() => router.push('/login')}
+                    onClick={() => router.push('/register')}
                     className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
                   >
                     Get Started

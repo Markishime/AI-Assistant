@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminDashboard from '@/src/app/components/AdminDashboard';
-import { supabase } from '@/lib/supabase-manager';
+import { getSupabaseClient } from '@/src/app/components/AuthProvider';
 
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
@@ -17,6 +17,13 @@ export default function AdminPage() {
 
   const checkAdminAccess = async () => {
     try {
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        router.push('/login');
+        return;
+      }
+
       // Check if user is authenticated
       const { data: { user }, error } = await supabase.auth.getUser();
       

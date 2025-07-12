@@ -36,7 +36,7 @@ export default function PromptManagement() {
       if (!response.ok) throw new Error('Failed to fetch prompts');
       
       const data = await response.json();
-      setPrompts(data);
+      setPrompts(data.templates); // Uses the templates from the API response
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch prompts');
     } finally {

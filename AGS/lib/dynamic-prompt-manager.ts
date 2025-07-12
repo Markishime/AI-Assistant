@@ -7,18 +7,14 @@ export interface DynamicPromptTemplate {
   description: string;
   template: string;
   variables: string[];
-  category: 'soil' | 'leaf' | 'general' | 'interpretation' | 'recommendations' | 'malaysian_specific';
+  category: string;
   priority: 'high' | 'medium' | 'low';
   is_active: boolean;
-  constraints: string[];
-  examples: string[];
-  context_rules: string[];
-  specificity_level: 'high' | 'medium' | 'low';
+  // Malaysian-specific fields
   malaysian_context: boolean;
   scientific_rigor: 'high' | 'medium' | 'low';
-  created_at: string;
-  updated_at: string;
-  version: string;
+  specificity_level: 'high' | 'medium' | 'low';
+  // Usage tracking
   usage_count: number;
   success_rate: number;
   last_used: string | null;

@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Navigation from './Navigation';
+import { Navigation } from './Navigation';
 import { useAuth } from './AuthProvider';
 
 interface DashboardLayoutProps {

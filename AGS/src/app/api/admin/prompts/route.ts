@@ -1,110 +1,47 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseManager } from '@/lib/supabase-manager';
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-export async function GET() {
-  try {
-    const prompts = await supabaseManager.getPrompts();
-    
-    return NextResponse.json({
-      success: true,
-      prompts
-    });
-  } catch (error) {
-    console.error('Error fetching prompts:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
-  }
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+// Helper to check admin (stub, replace with real auth check if needed)
+async function isAdmin(request: Request) {
+  // TODO: Implement real admin check
+  return true;  
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const { title, description, template, sample_type, language, user_focus, is_active } = await req.json();
-    
-    if (!title || !template || !sample_type) {
-      return NextResponse.json({
-        success: false,
-        error: 'Missing required fields: title, template, sample_type'
-      }, { status: 400 });
-    }
-
-    const prompt = await supabaseManager.createPrompt({
-      title,
-      description,
-      template,
-      sample_type,
-      language: language || 'en',
-      user_focus,
-      is_active: is_active !== undefined ? is_active : true
-    });
-    
-    return NextResponse.json({
-      success: true,
-      prompt
-    });
-  } catch (error) {
-    console.error('Error creating prompt:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return NextResponse.json({
-      success: false,
-      error: errorMessage
-    }, { status: 500 });
-  }
+export async function GET(request: Request) {
+  if (!(await isAdmin(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const { data, error } = await supabase.from('prompts_templates').select('*').order('updated_at', { ascending: false });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ prompts: data });
 }
 
-export async function PUT(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return NextResponse.json({
-        success: false,
-        error: 'Prompt ID is required'
-      }, { status: 400 });
-    }
-
-    const updateData = await req.json();
-    
-    const prompt = await supabaseManager.updatePrompt(id, updateData);
-    
-    return NextResponse.json({
-      success: true,
-      prompt
-    });
-  } catch (error) {
-    console.error('Error updating prompt:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
-  }
+export async function POST(request: Request) {
+  if (!(await isAdmin(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const body = await request.json();
+  const { data, error } = await supabase.from('prompts').insert([body]).select();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ prompt: data[0] });
 }
 
-export async function DELETE(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return NextResponse.json({
-        success: false,
-        error: 'Prompt ID is required'
-      }, { status: 400 });
-    }
+export async function PUT(request: Request) {
+  if (!(await isAdmin(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const body = await request.json();
+  const { id, ...update } = body;
+  const { data, error } = await supabase.from('prompts').update(update).eq('id', id).select();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ prompt: data[0] });
+}
 
-    await supabaseManager.deletePrompt(id);
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Prompt deleted successfully'
-    });
-  } catch (error) {
-    console.error('Error deleting prompt:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
-  }
+export async function DELETE(request: Request) {
+  if (!(await isAdmin(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const { id } = await request.json();
+  const { error } = await supabase.from('prompts').delete().eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
 }
